@@ -1,0 +1,157 @@
+{% extends 'base.html' %}
+
+{% block title %}Habit Analysis{% endblock %}
+
+{% block content %}
+<div class="container">
+    <h1 class="mb-4">Habit Analysis Dashboard</h1>
+
+    <!-- Success Rate Chart -->
+    <div class="card mb-4">
+        <div class="card-header">
+            <h2 class="h5 mb-0">7-Day Success Rate</h2>
+        </div>
+        <div class="card-body">
+            <canvas id="successRateChart" width="400" height="200"></canvas>
+        </div>
+    </div>
+
+    <!-- Currently Tracked Habits -->
+    <div class="card mb-4">
+        <div class="card-header">
+            <h2 class="h5 mb-0">Currently Tracked Habits</h2>
+        </div>
+        <div class="card-body">
+            {% if current_habits %}
+                <div class="list-group">
+                    {% for habit in current_habits %}
+                        <div class="list-group-item">
+                            <h5 class="mb-1">{{ habit.title }}</h5>
+                            <p class="mb-1 text-muted">{{ habit.description|truncatewords:30 }}</p>
+                            <small class="text-primary">{{ habit.get_frequency_display }}</small>
+                        </div>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <p class="text-muted">No habits are currently being tracked.</p>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Habits by Periodicity -->
+    <div class="card mb-4">
+        <div class="card-header">
+            <h2 class="h5 mb-0">Habits by Periodicity</h2>
+        </div>
+        <div class="card-body">
+            {% if habits_by_periodicity %}
+                {% for periodicity, habits in habits_by_periodicity.items %}
+                    <h3 class="h6 mb-3">{{ periodicity }}</h3>
+                    <div class="list-group mb-4">
+                        {% for habit in habits %}
+                            <div class="list-group-item">
+                                <h5 class="mb-1">{{ habit.title }}</h5>
+                                <p class="mb-1 text-muted">{{ habit.description|truncatewords:20 }}</p>
+                            </div>
+                        {% endfor %}
+                    </div>
+                {% endfor %}
+            {% else %}
+                <p class="text-muted">No habits found.</p>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Longest Overall Timespan -->
+    <div class="card mb-4">
+        <div class="card-header">
+            <h2 class="h5 mb-0">Longest Overall Tracking Period</h2>
+        </div>
+        <div class="card-body">
+            {% if longest_overall_span %}
+                <p class="mb-0">You have been tracking habits for {{ longest_overall_span }} days!</p>
+            {% else %}
+                <p class="text-muted">No habit completions recorded yet.</p>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Individual Habit Streaks -->
+    <div class="card">
+        <div class="card-header">
+            <h2 class="h5 mb-0">Current Habit Streaks</h2>
+        </div>
+        <div class="card-body">
+            {% if habit_timespans %}
+                <div class="list-group">
+                    {% for habit_data in habit_timespans %}
+                        <div class="list-group-item">
+                            <h5 class="mb-1">{{ habit_data.habit.title }}</h5>
+                            <p class="mb-1">Current Streak: {{ habit_data.timespan }} {{ habit_data.habit.get_frequency_display }} completions</p>
+                        </div>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <p class="text-muted">No habit completion data available.</p>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<!-- Add Chart.js -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    var ctx = document.getElementById('successRateChart').getContext('2d');
+    var dates = {{ dates|safe }};
+    var successRates = {{ success_rates|safe }};
+
+    new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: dates,
+            datasets: [{
+                label: 'Success Rate (%)',
+                data: successRates,
+                borderColor: 'rgb(75, 192, 192)',
+                tension: 0.1,
+                fill: true,
+                backgroundColor: 'rgba(75, 192, 192, 0.2)'
+            }]
+        },
+        options: {
+            responsive: true,
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    max: 100,
+                    title: {
+                        display: true,
+                        text: 'Success Rate (%)'
+                    }
+                },
+                x: {
+                    title: {
+                        display: true,
+                        text: 'Date'
+                    }
+                }
+            },
+            plugins: {
+                title: {
+                    display: true,
+                    text: 'Habit Success Rate Over Last 7 Days'
+                },
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            return `Success Rate: ${context.parsed.y}%`;
+                        }
+                    }
+                }
+            }
+        }
+    });
+});
+</script>
+{% endblock %} 
